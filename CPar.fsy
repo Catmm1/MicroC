@@ -16,9 +16,14 @@ let nl = CstI 10 //  \n 的 ASCII 码
 
 %token <int> CSTINT CSTBOOL  // <int> 是词元的语义值类型
 %token <string> CSTSTRING NAME
+%token <float32> CSTFLOAT
 
-%token CHAR ELSE IF INT NULL PRINT PRINTLN RETURN VOID WHILE DO
-%token PLUS MINUS TIMES DIV MOD PREINC PREDEC 
+%token PREINC PREDEC DO FOR FLOAT 
+%token PLUSAS MINUSAS TIMESAS DIVAS MODAS
+%token SWITCH CASE DEFAULT COLON
+
+%token CHAR ELSE IF INT NULL PRINT PRINTLN RETURN VOID WHILE 
+%token PLUS MINUS TIMES DIV MOD 
 %token EQ NE GT LT GE LE
 %token NOT SEQOR SEQAND
 %token LPAR RPAR LBRACE RBRACE LBRACK RBRACK SEMI COMMA ASSIGN AMP
@@ -140,6 +145,8 @@ StmtM:  /* No unbalanced if-else */
   | IF LPAR Expr RPAR StmtM ELSE StmtM  { If($3, $5, $7)       }
   | WHILE LPAR Expr RPAR StmtM          { While($3, $5)        }
   | DO StmtM WHILE LPAR Expr RPAR SEMI  { DoWhile($2, $5)      }
+  | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM { For($3, $5, $7, $9) }
+  | SWITCH LPAR Expr RPAR LBRACE CaseList RBRACE { Switch($3, $6) }
 ;
 
 StmtU:
@@ -164,6 +171,11 @@ ExprNotAccess:
   | Access PREDEC                       { Prim3("I--", $1)    } // i--
   | PREINC Access                       { Prim3("++I", $2)    } // ++i
   | PREDEC Access                       { Prim3("--I", $2)    } // --i
+  | Access PLUSAS Expr                  { Prim4("+=", $1, $3) }  // a+=i
+  | Access MINUSAS Expr                 { Prim4("-=", $1, $3) }  // a-=i
+  | Access TIMESAS Expr                 { Prim4("*=", $1, $3) }  // a*=i
+  | Access DIVAS Expr                   { Prim4("/=", $1, $3) }  // a/=i
+  | Access MODAS Expr                   { Prim4("%=", $1, $3) }  // a%=i
   | Expr PLUS  Expr                     { Prim2("+",  $1, $3) }
   | Expr MINUS Expr                     { Prim2("-",  $1, $3) }
   | Expr TIMES Expr                     { Prim2("*",  $1, $3) }
@@ -187,6 +199,7 @@ AtExprNotAccess:
     Const                               { CstI $1             }
   | LPAR ExprNotAccess RPAR             { $2                  } 
   | AMP Access                          { Addr $2             } // 取地址
+  | ConstFloat                          { CstF($1)            }   //float
 ;
 
 Access:    //可以为左值的情况
@@ -213,8 +226,25 @@ Const:
   | MINUS CSTINT                        { - $2     }
   | NULL                                { -1       }
 ;
+//FLOAT
+ConstFloat:
+    CSTFLOAT                            { $1       }
+  | MINUS CSTFLOAT                      { - $2     }
+; 
 
 Type:
     INT                                 { TypI     }
   | CHAR                                { TypC     }
+  | FLOAT                               { TypF     }
+;
+
+
+CaseList:
+                          { [] }
+    | CaseDec             { [$1] }
+    | CaseDec CaseList    { $1 :: $2 }
+    | DEFAULT COLON Stmt  { [Default($3)] }
+;
+CaseDec:
+  CASE Expr COLON Stmt  { Case($2, $4)  }
 ;

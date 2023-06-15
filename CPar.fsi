@@ -26,8 +26,6 @@ type token =
   | TIMES
   | DIV
   | MOD
-  | PREINC
-  | PREDEC
   | CHAR
   | ELSE
   | IF
@@ -38,7 +36,21 @@ type token =
   | RETURN
   | VOID
   | WHILE
+  | SWITCH
+  | CASE
+  | DEFAULT
+  | COLON
+  | PLUSAS
+  | MINUSAS
+  | TIMESAS
+  | DIVAS
+  | MODAS
+  | PREINC
+  | PREDEC
   | DO
+  | FOR
+  | FLOAT
+  | CSTFLOAT of (float32)
   | CSTSTRING of (string)
   | NAME of (string)
   | CSTINT of (int)
@@ -69,8 +81,6 @@ type tokenId =
     | TOKEN_TIMES
     | TOKEN_DIV
     | TOKEN_MOD
-    | TOKEN_PREINC
-    | TOKEN_PREDEC
     | TOKEN_CHAR
     | TOKEN_ELSE
     | TOKEN_IF
@@ -81,7 +91,21 @@ type tokenId =
     | TOKEN_RETURN
     | TOKEN_VOID
     | TOKEN_WHILE
+    | TOKEN_SWITCH
+    | TOKEN_CASE
+    | TOKEN_DEFAULT
+    | TOKEN_COLON
+    | TOKEN_PLUSAS
+    | TOKEN_MINUSAS
+    | TOKEN_TIMESAS
+    | TOKEN_DIVAS
+    | TOKEN_MODAS
+    | TOKEN_PREINC
+    | TOKEN_PREDEC
     | TOKEN_DO
+    | TOKEN_FOR
+    | TOKEN_FLOAT
+    | TOKEN_CSTFLOAT
     | TOKEN_CSTSTRING
     | TOKEN_NAME
     | TOKEN_CSTINT
@@ -110,7 +134,10 @@ type nonTerminalId =
     | NONTERM_Exprs
     | NONTERM_Exprs1
     | NONTERM_Const
+    | NONTERM_ConstFloat
     | NONTERM_Type
+    | NONTERM_CaseList
+    | NONTERM_CaseDec
 /// This function maps tokens to integer indexes
 val tagOfToken: token -> int
 

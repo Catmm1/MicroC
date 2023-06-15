@@ -187,6 +187,58 @@ let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         @ cStmt body varEnv funEnv
           @ [ Label labtest ]
             @ cExpr e varEnv funEnv @ [ IFNZRO labbegin ]
+
+    | DoWhile (body, e) ->
+        let labbegin = newLabel ()
+        let labtest = newLabel ()
+
+        cStmt body varEnv funEnv
+            @[ GOTO labtest ]
+                @[ Label labbegin ]
+                @ cStmt body varEnv funEnv
+                @ [ Label labtest ]
+                @ cExpr e varEnv funEnv
+                @ [ IFNZRO labbegin ]
+
+    | For (e1, e2, e3, body) ->
+        let labbegin = newLabel()           // 
+        let labtest  = newLabel()
+
+        cExpr e1 varEnv funEnv @ [INCSP -1]                     // 首先完成e1，一般为赋值, INCSP -1 是为了释放计算空间
+            @ [GOTO labtest; Label labbegin]                    // 跳转到labtest, 首先进行判断， 同时此处为labbegin
+                @ cStmt body varEnv funEnv                      // 执行循环中的内容
+                    @ cExpr e3 varEnv funEnv @ [INCSP -1]       // 执行e3
+                        @ [Label labtest]                       // labtest
+                            @ cExpr e2 varEnv funEnv            // 执行e2
+                                @ [IFNZRO labbegin]             // 如果e2执行后返回不为0，跳转到labbegin
+
+    | Switch(e, cases) ->
+        let rec searchcases c =
+            match c with
+            | Case (e, body) :: tail ->
+                let labend = newLabel ()
+                let labfin = newLabel ()
+
+                [DUP]
+                    @ cExpr e varEnv funEnv
+                        @ [EQ]
+                            @ [ IFZERO labend ]
+                                @ cStmt body varEnv funEnv
+                                    @ [ GOTO labfin ]
+                                        @ [ Label labend ]
+                                            @ searchcases tail
+                                                @ [ Label labfin ]
+            | Default body :: [] ->
+                cStmt body varEnv funEnv
+            | [] -> []
+
+        cExpr e varEnv funEnv
+            @ searchcases cases
+                @ [ INCSP -1 ]
+
+    | Case (e, body) -> cStmt body varEnv funEnv
+    | Default (body) -> cStmt body varEnv funEnv
+
     | Expr e -> cExpr e varEnv funEnv @ [ INCSP -1 ]
     | Block stmts ->
 
@@ -229,6 +281,10 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         cAccess acc varEnv funEnv
         @ cExpr e varEnv funEnv @ [ STI ]
     | CstI i -> [ CSTI i ]
+    | CstF f -> 
+        let bytes = System.BitConverter.GetBytes(float32(f))
+        let v = System.BitConverter.ToInt32(bytes, 0)
+        [ CSTI v ]
     | Addr acc -> cAccess acc varEnv funEnv
     | Prim1 (ope, e1) ->
         cExpr e1 varEnv funEnv
@@ -269,6 +325,17 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
                     @[ DUP;LDI; CSTI -1; ADD;STI]
             | _ -> raise (Failure "unknown primitive 4")
         )
+    | Prim4 (ope, e1, e2) ->
+        cAccess e1 varEnv funEnv
+            @ [DUP; LDI]
+            @ cExpr e2 varEnv funEnv
+                @ (match ope with
+                    | "+=" -> [ ADD; STI ]
+                    | "-=" -> [ SUB; STI ]
+                    | "*=" -> [ MUL; STI ]
+                    | "/=" -> [ DIV; STI ]
+                    | "%=" -> [ MOD; STI ]
+                    | _ -> raise (Failure "unknown AssignPrim"))
     | Andalso (e1, e2) ->
         let labend = newLabel ()
         let labfalse = newLabel ()

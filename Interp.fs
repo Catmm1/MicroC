@@ -280,6 +280,33 @@ let rec exec stmt (locEnv: locEnv) (gloEnv: gloEnv) (store: store) : store =
         
         loop (exec body locEnv gloEnv store)
 
+    | For (e1, e2, e3, body) ->
+        let (v, store1) = eval e1 locEnv gloEnv store
+        let rec loop store1 = 
+            let (v,store2) = eval e2 locEnv gloEnv store1
+            if v<>0 then loop(snd(eval e3 locEnv gloEnv (exec body locEnv gloEnv store2)))
+            else store2
+
+        loop store1
+
+    | Switch(e, body) ->
+        let (v, store0) = eval e locEnv gloEnv store
+        let rec carry list = 
+            match list with
+            | Case(e1, body1) :: next ->
+                let (v1, store1) = eval e1 locEnv gloEnv store0
+                if v1 = v then exec body1 locEnv gloEnv store1
+                else carry next
+            | Default(body) :: over ->
+                exec body locEnv gloEnv store0
+            | [] -> store0
+            | _ -> store0
+
+        (carry body)
+
+    | Case (e, body) -> exec body locEnv gloEnv store
+    | Default(body) -> exec body locEnv gloEnv store
+
     | Expr e ->
         // _ 表示丢弃e的值,返回 变更后的环境store1
         let (_, store1) = eval e locEnv gloEnv store
@@ -316,6 +343,10 @@ and eval e locEnv gloEnv store : int * store =
         let (res, store2) = eval e locEnv gloEnv store1
         (res, setSto store2 loc res)
     | CstI i -> (i, store)
+    | CstF f -> 
+        let bytes = System.BitConverter.GetBytes(float32(f))
+        let v = System.BitConverter.ToInt32(bytes, 0)
+        (v, store)
     | Addr acc -> access acc locEnv gloEnv store
     | Prim1 (ope, e1) ->
         let (i1, store1) = eval e1 locEnv gloEnv store
@@ -370,6 +401,20 @@ and eval e locEnv gloEnv store : int * store =
                 let res = i1 - 1
                 res, setSto store1 loc res
             | _ -> failwith ("unknown primitive " + ope)
+    
+    | Prim4(ope, acc, e) ->
+        let (loc, store1) = access acc locEnv gloEnv store
+        let tmp = getSto store1 loc
+        let (res, store2) = eval e locEnv gloEnv store1
+        let num = 
+            match ope with
+            | "+=" ->  tmp + res
+            | "-=" ->  tmp - res
+            | "*=" ->  tmp * res
+            | "/=" ->  tmp / res
+            | "%=" ->  tmp % res
+            | _ -> failwith ("unknown primitive " + ope)
+        (num, setSto store2 loc num)
 
     | Andalso (e1, e2) ->
         let (i1, store1) as res = eval e1 locEnv gloEnv store

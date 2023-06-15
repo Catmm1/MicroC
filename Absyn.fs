@@ -13,6 +13,7 @@ module Absyn
 type typ =
   | TypI                             (* Type int                    *)
   | TypC                             (* Type char                   *)
+  | TypF
   | TypA of typ * int option         (* Array type                  *)
   | TypP of typ                      (* Pointer type                *)
                                                                    
@@ -23,10 +24,12 @@ and expr =                           // 表达式，右值
   | CstI of int                      (* Constant                    *)
   | Prim1 of string * expr           (* Unary primitive operator    *)
   | Prim2 of string * expr * expr    (* Binary primitive operator   *)
-  | Prim3 of string * access         (* i++ i-- --i ++i             *)
+  | Prim3 of string * access         (* i++ i-- --i ++i             *)  //new
+  | Prim4 of string * access * expr  (* += -+ *= /= %=              *)  //new
   | Andalso of expr * expr           (* Sequential and              *)
   | Orelse of expr * expr            (* Sequential or               *)
   | Call of string * expr list       (* Function call f(...)        *)
+  | CstF of float32                  (* Float                       *)  //new
                                                                    
 and access =                         //左值，存储的位置                                            
   | AccVar of string                 (* Variable access        x    *) 
@@ -36,7 +39,11 @@ and access =                         //左值，存储的位置
 and stmt =                                                         
   | If of expr * stmt * stmt         (* Conditional                 *)
   | While of expr * stmt             (* While loop                  *)
-  | DoWhile of stmt * expr           (* Do While 循环               *)
+  | DoWhile of stmt * expr           (* Do While 循环               *)  //new
+  | For of expr * expr * expr * stmt (* For: for 循环               *)  //new
+  | Switch of expr * stmt list       (* Switch 语句                 *)  //new
+  | Case of expr * stmt              (* Case 语句                   *)  //new
+  | Default of stmt                  (* Default 语句                *)  //new
   | Expr of expr                     (* Expression statement   e;   *)
   | Return of expr option            (* Return from method          *)
   | Block of stmtordec list          (* Block: grouping and scope   *)
