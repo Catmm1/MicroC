@@ -238,9 +238,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\mm\\作业\\编程语言原理与编译\\大作业\\plzoofs\\microc\\microc.fsproj",
-      "projectName": "microc",
-      "projectPath": "D:\\mm\\作业\\编程语言原理与编译\\大作业\\plzoofs\\microc\\microc.fsproj",
+      "projectUniqueName": "D:\\mm\\作业\\编程语言原理与编译\\大作业\\plzoofs\\microc\\interpc.fsproj",
+      "projectName": "interpc",
+      "projectPath": "D:\\mm\\作业\\编程语言原理与编译\\大作业\\plzoofs\\microc\\interpc.fsproj",
       "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
       "outputPath": "D:\\mm\\作业\\编程语言原理与编译\\大作业\\plzoofs\\microc\\obj\\",
       "projectStyle": "PackageReference",
